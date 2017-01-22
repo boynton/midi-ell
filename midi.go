@@ -68,33 +68,33 @@ var midiIn *portmidi.Stream
 var midiChannel chan portmidi.Event
 var midiMutex = &sync.Mutex{}
 
-func findMidiInputDevice(name string) portmidi.DeviceId {
+func findMidiInputDevice(name string) portmidi.DeviceID {
 	devcount := portmidi.CountDevices()
 	for i := 0; i < devcount; i++ {
-		id := portmidi.DeviceId(i)
-		info := portmidi.GetDeviceInfo(id)
+		id := portmidi.DeviceID(i)
+		info := portmidi.Info(id)
 		if info.IsInputAvailable {
 			if info.Name == name {
 				return id
 			}
 		}
 	}
-	return portmidi.DeviceId(-1)
+	return portmidi.DeviceID(-1)
 }
 
-func findMidiOutputDevice(name string) (portmidi.DeviceId, string) {
+func findMidiOutputDevice(name string) (portmidi.DeviceID, string) {
 	devcount := portmidi.CountDevices()
 	for i := 0; i < devcount; i++ {
-		id := portmidi.DeviceId(i)
-		info := portmidi.GetDeviceInfo(id)
+		id := portmidi.DeviceID(i)
+		info := portmidi.Info(id)
 		if info.IsOutputAvailable {
 			if info.Name == name {
 				return id, info.Name
 			}
 		}
 	}
-	id := portmidi.GetDefaultOutputDeviceId()
-	info := portmidi.GetDeviceInfo(id)
+	id := portmidi.DefaultOutputDeviceID()
+	info := portmidi.Info(id)
 	return id, info.Name
 }
 
