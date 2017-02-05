@@ -51,9 +51,10 @@ func midiInit() error {
 		[]*ell.Object{ell.StringType, ell.StringType, ell.NumberType},
 		[]*ell.Object{ell.EmptyString, ell.EmptyString, ell.Number(1024)},
 		[]*ell.Object{inputKey, outputKey, bufsizeKey})
-	ell.DefineFunction("midi-write", midiWrite, ell.NullType, ell.NumberType, ell.NumberType, ell.NumberType)
+	ell.DefineFunction("midi-write", midiWrite, ell.NullType, ell.NumberType, ell.NumberType, ell.NumberType, ell.NumberType)
 	ell.DefineFunction("midi-close", midiClose, ell.NullType)
 	ell.DefineFunction("midi-listen", midiListen, ell.ChannelType)
+	ell.DefineFunction("midi-time", midiTime, ell.NumberType)
 	return nil
 }
 
@@ -159,16 +160,34 @@ func midiClose(argv []*ell.Object) (*ell.Object, error) {
 	return ell.Null, nil
 }
 
-// (midi-write 144 60 80) -> middle C note on
-// (midi-write 128 60 0) -> middle C note off
+func midiTime(argv []*ell.Object) (*ell.Object, error) {
+	ts := (float64(portmidi.Time()) / 1000.0) + midiBaseTime
+	return ell.Number(ts), nil
+}
+
+// (midi-write (midi-time) 144 60 80) -> middle C note on
+// (midi-write 0 128 60 0) -> middle C note off
+//note that the timestamp (first argument) can be 0, which means use portmidi.WriteShort is used (using current portmidi.Time()
 func midiWrite(argv []*ell.Object) (*ell.Object, error) {
-	status := ell.Int64Value(argv[0])
-	data1 := ell.Int64Value(argv[1])
-	data2 := ell.Int64Value(argv[2])
-	midiMutex.Lock()
+	sec := ell.Float64Value(argv[0])
+	status := ell.Int64Value(argv[1])
+	data1 := ell.Int64Value(argv[2])
+	data2 := ell.Int64Value(argv[3])
 	var err error
+	midiMutex.Lock()
 	if midiOut != nil {
-		err = midiOut.WriteShort(status, data1, data2)
+		if sec == 0.0 {
+			err = midiOut.WriteShort(status, data1, data2) //this always uses portmidi.Time() as the ts
+		} else {
+			ts := int64((sec - midiBaseTime) * 1000.0)
+			evt := portmidi.Event{
+				Timestamp: portmidi.Timestamp(ts),
+				Status:    status,
+				Data1:     data1,
+				Data2:     data2,
+			}
+			err = midiOut.Write([]portmidi.Event{evt})
+		}
 	}
 	midiMutex.Unlock()
 	return ell.Null, err
