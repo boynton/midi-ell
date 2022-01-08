@@ -2,13 +2,13 @@ PKG=github.com/boynton/midi-ell
 BIN=$(GOPATH)/bin/mell
 
 all:
-	go install $(PKG)/cmd/mell
+	CGO_CFLAGS="-I/opt/homebrew/include" CGO_LDFLAGS="-L/opt/homebrew/lib" go install $(PKG)/cmd/mell
 
 prebuild:
 	go get -u github.com/boynton/ell
 	go get -u github.com/boynton/repl
-	go get -u github.com/pborman/uuid
-	go get -u github.com/rakyll/portmidi
+#   brew install portmidi
+	CGO_CFLAGS="-I/opt/homebrew/include" CGO_LDFLAGS="-L/opt/homebrew/lib" go get -u github.com/rakyll/portmidi
 
 test:
 	go run miditest.go

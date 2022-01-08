@@ -1,5 +1,5 @@
 ;(def *midi-config* (midi-open input: "USB Oxygen 8 v2"))
-;(def *midi-config* (midi-open))
+(def *midi-config* (midi-open))
 
 (defn midi-write-after (dur d1 d2 d3)
   (sleep dur)
@@ -12,6 +12,9 @@
 (defn midi-note (key vel dur)
   (midi-write 0 144 key vel)
   (spawn midi-write-after dur 128 key 0))
+
+(defn midi-quiet ()
+  (midi-write 0 176 123 0))
 
 (defn midi-test ()
    (dorange (i 21 108)
